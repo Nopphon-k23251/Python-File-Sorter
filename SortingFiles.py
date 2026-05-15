@@ -1,62 +1,83 @@
+"""Sorting files by type."""
+
 import os
 import shutil
 
-"""
-Sorting Files by Type
-"""
-def filetype(file):
+FILE_TYPES = {
+    "Images": [
+        '.jpg', '.png', '.jpeg',
+        '.tif', '.tiff', '.webp',
+        '.avif', '.heic'
+    ],
+    "Documents": [
+        '.pdf', '.csv', '.docx',
+        '.txt', '.rft', '.odt',
+        '.xml', '.xlsx', '.pptx'
+    ],
+    "Videos": [
+        '.mp4', '.mov',
+        '.mkv', '.avi', '.webm'
+    ],
+    "Gif": ['.gif'],
+    "EXE": ['.exe'],
+    "Json": ['.json'],
+    "Compressed": ['.zip', '.jar'],
+    "Application": [
+        '.apk', '.app', '.deb',
+        '.dmg', '.msi', '.rpm',
+        '.msix'
+    ],
+}
+
+
+def read_file_type(file_name):
     """Get file type by file name."""
-    temp = file.split(".")
-    return f'.{temp[-1]}'
+    return os.path.splitext(file_name)[1].lower()
 
-"""Main Function"""
+
 def main():
-    # File type dictionary
-    fileType = {
-        "Images": ['.jpg', '.png', '.jpeg', '.tif', '.tiff', '.webp', '.avif', '.heic'],
-        "Documents": ['.pdf', '.csv', '.docx', '.txt', '.rft', 'odt', '.xml', '.xlsx', '.pptx'],
-        "Videos": ['.mp4', '.mov', '.mkv', '.avi', '.webm'],
-        "Gif": ['.gif'],
-        "EXE": ['.exe'],
-        "Json": ['.json'],
-        "Compressed": ['.zip', '.jar'],
-        "Application": ['.apk', '.app', '.deb', '.dmg', '.msi', '.rpm', '.msix'],
-    }
-    # Temporary file dictionary
-    filestemp = dict()
-    # Get sorting folder path
+    """Main function."""
+    files_temp = {}
     path = input("Sorting Folder Path: ")
-    # open folder by path
-    for root, dirs, files in os.walk(path):
+    for root, _, files in os.walk(path):
+        if root != path:
+            continue
         for item in files:
-            filestemp[item] = [f"{root}\\{item}", root, filetype(item)]
-
+            item_path = os.path.join(root, item)
+            files_temp[item_path] = {
+                "name": item,
+                "type": read_file_type(item)
+            }
     # Create folder and move file to folder
-    for storage in fileType:
-        folder_path = None
-        try:
-            os.mkdir(path=f'{path}\\{storage}')
-            folder_path = f"{path}\\{storage}"
-            print(f"Created New Folder Complete : Name - {storage}")
-        except FileExistsError:
-            folder_path = f"{path}\\{storage}"
+    for storage in FILE_TYPES:
+        os.makedirs(
+            os.path.join(path, storage),
+            exist_ok=True
+        )
 
-        for item in filestemp:
-            itmetype = filestemp[item][-1]
-            itmepath = filestemp[item][0]
-            parent = filestemp[item][1]
+    for item_path, data in files_temp.items():
+        item_type = data["type"]
+        item_name = data["name"]
 
-            if itmetype in fileType[storage] and parent==path:
-                shutil.move(itmepath, folder_path)
-                print(f'move {item} to {storage}.')
-            else:
-                if parent!=path:
-                    p = parent.split("\\")
-                    print(f"Skip file:{item}, Parent: {p[-1]}")
-    # Move file to other folder
+        for storage, extensions in FILE_TYPES.items():
+            if item_type in extensions:
+                    
+                destination = os.path.join(
+                    path,
+                    storage,
+                    item_name
+                )
+
+                shutil.move(item_path, destination)
+
+                print(f"Moved {item_name} to {storage}")
+                break
+
     print("Sorting Complete.")
     # Show folder in path
     print(f"Show Folder in {path}")
     for item in os.listdir(path):
         print(item)
-main()
+
+if __name__ == "__main__":
+    main()
